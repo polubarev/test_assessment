@@ -23,23 +23,32 @@ from langgraph.prebuilt import create_react_agent
 logger = get_logger(__name__)
 
 
-def _make_model_via_class(model_name: str, temperature: float = 0.0):
+def _make_model_via_class(model_name: str, temperature: float = 0.0, max_tokens: int | None = None):
     from langchain_ollama import ChatOllama
-    logger.debug("Instantiating ChatOllama", extra={"model": model_name, "temperature": temperature})
-    return ChatOllama(model=model_name, temperature=temperature)
+    logger.debug("Instantiating ChatOllama", extra={"model": model_name, "temperature": temperature, "max_tokens": max_tokens})
+    kwargs = {"model": model_name, "temperature": temperature}
+    if max_tokens is not None:
+        # Ollama uses num_predict for output token cap
+        kwargs["num_predict"] = int(max_tokens)
+    return ChatOllama(**kwargs)
 
 # Alternative unified factory (if you prefer init_chat_model):
-def _make_model_via_init(model_name: str, temperature: float = 0.0):
+def _make_model_via_init(model_name: str, temperature: float = 0.0, max_tokens: int | None = None):
     from langchain.chat_models import init_chat_model
     # Supports provider prefixes like "ollama:llama3.1:8b" in modern LangChain
-    logger.debug("Instantiating chat model via init_chat_model", extra={"model": model_name, "temperature": temperature})
-    return init_chat_model(model_name, temperature=temperature)
+    logger.debug("Instantiating chat model via init_chat_model", extra={"model": model_name, "temperature": temperature, "max_tokens": max_tokens})
+    model_kwargs = {}
+    if max_tokens is not None:
+        # For Ollama via unified factory, pass provider-specific kwarg
+        model_kwargs["num_predict"] = int(max_tokens)
+    return init_chat_model(model_name, temperature=temperature, model_kwargs=model_kwargs or None)
 
 def build_agent(
     *,
     model_name: str = "llama3.1:8b",  # the name as visible in `ollama list`
     use_init_factory: bool = False,
     temperature: float = 0.0,
+    max_tokens: int | None = None,
     tools: Optional[list] = None,
     system_prompt: Optional[str] = None,
 ):
@@ -51,12 +60,12 @@ def build_agent(
     - system_prompt: static instructions for the agent (optional)
     """
     tools = tools or []
-    logger.info("Building ReAct agent", extra={"model_name": model_name, "use_init_factory": use_init_factory, "temperature": temperature, "num_tools": len(tools)})
+    logger.info("Building ReAct agent", extra={"model_name": model_name, "use_init_factory": use_init_factory, "temperature": temperature, "max_tokens": max_tokens, "num_tools": len(tools)})
 
     if use_init_factory:
-        model = _make_model_via_init(f"ollama:{model_name}", temperature=temperature)
+        model = _make_model_via_init(f"ollama:{model_name}", temperature=temperature, max_tokens=max_tokens)
     else:
-        model = _make_model_via_class(model_name, temperature=temperature)
+        model = _make_model_via_class(model_name, temperature=temperature, max_tokens=max_tokens)
 
     logger.debug("Creating LangGraph ReAct agent")
     agent = create_react_agent(

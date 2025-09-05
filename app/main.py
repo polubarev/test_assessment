@@ -133,11 +133,15 @@ async def init_ssh_dataframe() -> None:
             except Exception as prompt_exc:
                 logger.warning("Failed to read system prompt file; using default: %s", prompt_exc)
                 system_prompt = default_prompt
-            logger.info("Building agent", extra={"model": "qwen2.5:32b-instruct"})
+            # Optional max tokens from env
+            max_tokens_env = os.getenv("AGENT_MAX_TOKENS")
+            max_tokens = int(max_tokens_env) if (max_tokens_env or "").strip().isdigit() else None
+            logger.info("Building agent", extra={"model": "qwen2.5:32b-instruct", "max_tokens": max_tokens})
             app.state.agent = build_agent(
                 model_name="qwen2.5:32b-instruct",
                 use_init_factory=False,
                 temperature=0.0,
+                max_tokens=max_tokens,
                 tools=[sql_tool],
                 system_prompt=system_prompt,
             )

@@ -69,6 +69,7 @@ def run_questions(
     output_csv_path: str,
     model_name: str = "qwen2.5:32b-instruct",
     temperature: float = 0.0,
+    max_tokens: int | None = None,
     questions: List[str] | None = None,
 ) -> str:
     logger.info(
@@ -79,6 +80,7 @@ def run_questions(
             "output_csv_path": output_csv_path,
             "model_name": model_name,
             "temperature": temperature,
+            "max_tokens": max_tokens,
         },
     )
 
@@ -94,6 +96,7 @@ def run_questions(
         model_name=model_name,
         use_init_factory=False,
         temperature=temperature,
+        max_tokens=max_tokens,
         tools=[sql_tool],
         system_prompt=system_prompt,
     )
@@ -171,6 +174,13 @@ def main(argv: List[str] | None = None) -> int:
         default=0.0,
         help="Sampling temperature",
     )
+    parser.add_argument(
+        "--max-tokens",
+        dest="max_tokens",
+        type=int,
+        default=None,
+        help="Maximum number of output tokens (Ollama num_predict)",
+    )
 
     args = parser.parse_args(argv)
 
@@ -184,6 +194,7 @@ def main(argv: List[str] | None = None) -> int:
             output_csv_path=args.output_csv,
             model_name=args.model_name,
             temperature=args.temperature,
+            max_tokens=args.max_tokens,
         )
     except SystemExit:
         raise
