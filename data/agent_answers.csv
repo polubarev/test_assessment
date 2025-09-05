@@ -1,79 +1,92 @@
 index,timestamp,question,answer
-1,2025-09-05T08:12:24Z,What are the top 5 attacking IP addresses?,"**Summary:** Top 5 IP addresses by total event counts.
-**Findings:**
+1,2025-09-05T08:16:08Z,What are the top 5 attacking IP addresses?,"Summary: The top 5 attacking IP addresses are listed below with their respective event counts.
+Findings:
+- `59.63.188.30` has the highest number of events (43,150).
+- `183.63.110.206` is second with 34,680 events.
+- `183.238.178.195` follows with 29,038 events.
+- `139.219.191.138` and `183.62.140.253` both have 21,704 events.
 
-* `192.0.2.1` — 487 events
-* `198.51.100.2` — 365 events
-* `203.0.113.3` — 298 events
-* `192.168.1.100` — 274 events
-* `10.0.0.1` — 256 events
+`Preview:`
+ip_address,event_count
+59.63.188.30,43150
+183.63.110.206,34680
+183.238.178.195,29038
+139.219.191.138,21704
+183.62.140.253,21704
 
-**SQL:**
-
+`SQL:`
 ```sql
 SELECT ip_address, COUNT(*) AS event_count
 FROM ssh
 GROUP BY ip_address
 ORDER BY event_count DESC
-LIMIT 5
+LIMIT 5;
 ```"
-2,2025-09-05T08:12:31Z,Show me all failed login attempts from yesterday,"**Summary:** Showing all failed login attempts from the previous day.
+2,2025-09-05T08:16:20Z,Show me all failed login attempts from yesterday,"Assumption: Yesterday is defined as the day before today's date in UTC.
 
-**Findings:**
-
-* Total failed logins: X (from yesterday)
-
-**SQL:**
-
+`SQL:`
 ```sql
 SELECT *
 FROM ssh
-WHERE event_type IN ('FAILED_LOGIN_INVALID_USER', 'PAM_AUTH_FAILURE')
-  AND DATE(timestamp) = CURRENT_DATE - INTERVAL '1 DAY'
-LIMIT 50
+WHERE event_type IN ('FAILED_LOGIN', 'FAILED_LOGIN_INVALID_USER')
+  AND timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+  AND timestamp < CURDATE()
+LIMIT 50;
 ```"
-3,2025-09-05T08:12:46Z,Are there any signs of brute force attacks?,"**Summary:** Brute force attacks are typically characterized by high repetition counts or frequent failed login attempts from the same IP. Here are IPs with the highest number of failed login attempts in the last 7 days.
-**Findings:**
+3,2025-09-05T08:16:33Z,Are there any signs of brute force attacks?,"Summary: To identify potential brute-force attacks, we will look for repeated failed login attempts from the same IP address.
 
-* `192.0.2.1` — 543 failures (last 7d)
-* `198.51.100.1` — 467 failures (last 7d)
-* ...
-
-**SQL:**
+`SQL:` 
 ```sql
-SELECT ip_address, COUNT(*) AS failed_attempts
+SELECT ip_address, username, COUNT(*) AS failed_attempts
 FROM ssh
-WHERE event_type IN ('FAILED_LOGIN_INVALID_USER', 'PAM_AUTH_FAILURE')
-  AND timestamp >= NOW() - INTERVAL '7 DAYS'
-GROUP BY ip_address
-ORDER BY failed_attempts DESC
-LIMIT 5
+WHERE event_type IN ('FAILED_LOGIN', 'FAILED_LOGIN_INVALID_USER')
+GROUP BY ip_address, username
+HAVING failed_attempts > 10
+ORDER BY failed_attempts DESC;
 ```"
-4,2025-09-05T08:12:56Z,Which usernames are being targeted most frequently?,"**Summary:** The usernames targeted most frequently are listed below based on the total number of attempts.
-**Findings:**
+4,2025-09-05T08:17:05Z,Which usernames are being targeted most frequently?,"Summary: The usernames being targeted most frequently are listed below with their occurrence counts.
 
-* `root` — 1,234 attempts
-* `admin` — 856 attempts
-* `user` — 700 attempts
-* `test` — 500 attempts
-* `webmaster` — 300 attempts
+Findings:
+- `root`: 316,601 attempts
+- `admin`: 11,114 attempts
+- `test`: 1,086 attempts
+- `oracle`: 978 attempts
+- `support`: 937 attempts
+- `user`: 718 attempts
+- `pi`: 674 attempts
+- `nagios`: 592 attempts
+- `guest`: 518 attempts
+- `postgres`: 432 attempts
 
-**SQL:**
+Preview:
+```
+username,attempts_count
+root,316601
+admin,11114
+test,1086
+oracle,978
+support,937
+user,718
+pi,674
+nagios,592
+guest,518
+postgres,432
+```
+
+SQL:
 ```sql
-SELECT username, COUNT(*) AS total_attempts
+SELECT username, COUNT(*) AS attempts_count
 FROM ssh
 GROUP BY username
-ORDER BY total_attempts DESC
-LIMIT 5
+ORDER BY attempts_count DESC
+LIMIT 10;
 ```"
-5,2025-09-05T08:13:01Z,How many total login attempts were recorded?,"**Summary:** Total number of login attempts recorded in the dataset.
-
-**Findings:**
-- Total login attempts: 12,345
-
-**SQL:**
+5,2025-09-05T08:17:09Z,How many total login attempts were recorded?,"Summary: The total number of login attempts is the count of all rows in the `ssh` table.
 
 ```sql
-SELECT COUNT(*) AS total_attempts
-FROM ssh;
+SELECT COUNT(*) AS total_attempts FROM ssh;
+```
+
+`SQL:` ```sql
+SELECT COUNT(*) AS total_attempts FROM ssh;
 ```"

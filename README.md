@@ -56,6 +56,10 @@ ollama pull qwen2.5:32b-instruct
 
 ## Running the Application
 
+This project can be used in two ways: as a real-time REST API server or as a command-line tool for batch processing.
+
+### 1. API Server
+
 Launch the API server using Uvicorn.
 
 ```bash
@@ -63,6 +67,32 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at `http://localhost:8000`.
+
+### 2. Command-Line Scripts
+
+The `scripts/` directory contains powerful tools for interacting with the agent from the command line.
+
+#### Running Batch Questions
+
+The `run_questions.py` script executes a predefined list of questions, invokes the agent for each, and saves the complete results to a CSV file.
+
+```bash
+python scripts/run_questions.py
+```
+
+By default, this saves the output to `data/agent_answers.csv`. You can customize the model, questions, and output path via command-line arguments. Use `--help` to see all options.
+
+```bash
+python scripts/run_questions.py --help
+```
+
+#### Inspecting the Database Schema
+
+The `describe_sql.py` script is a developer utility that prints the schema of the in-memory DuckDB table. This is useful for understanding the data structure the agent sees.
+
+```bash
+python scripts/describe_sql.py
+```
 
 ## API Documentation
 
