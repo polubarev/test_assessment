@@ -46,15 +46,18 @@ def make_sql_tool(
         schema_lines.append(f"- {t}({', '.join(cols)})")
     schema_text = "\n".join(schema_lines)
 
-    @tool
+    @tool(parse_docstring=True)
     def sql_query(query: str) -> str:
-        """
-        Execute a read-only SQL SELECT query against registered DataFrames.
+        """Execute a read-only SQL SELECT query against registered DataFrames.
+
+        Args:
+            query: SQL SELECT statement to execute against the registered DataFrames.
 
         Constraints:
         - Only SELECT statements are allowed.
         - Available tables: {table_list}
-        - Schemas:\n{schema_text}
+        - Schemas:
+        {schema_text}
         - Output: CSV with header, truncated to {max_rows} rows.
 
         Examples (adjust to your tables/columns):
@@ -104,6 +107,7 @@ def make_sql_tool(
     # Bake table names & limits into the docstring for LLM discoverability
     sql_query.__doc__ = sql_query.__doc__.format(
         table_list=table_list,
+        schema_text=schema_text,
         max_rows=max_rows,
     )
     return sql_query

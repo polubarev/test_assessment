@@ -1,5 +1,5 @@
 index,timestamp,question,answer
-1,2025-09-05T08:16:08Z,What are the top 5 attacking IP addresses?,"Summary: The top 5 attacking IP addresses are listed below with their respective event counts.
+1,2025-09-10T17:09:15Z,What are the top 5 attacking IP addresses?,"Summary: The top 5 attacking IP addresses are listed below with their respective event counts.
 Findings:
 - `59.63.188.30` has the highest number of events (43,150).
 - `183.63.110.206` is second with 34,680 events.
@@ -7,86 +7,86 @@ Findings:
 - `139.219.191.138` and `183.62.140.253` both have 21,704 events.
 
 `Preview:`
-ip_address,event_count
-59.63.188.30,43150
-183.63.110.206,34680
-183.238.178.195,29038
-139.219.191.138,21704
-183.62.140.253,21704
+```
+ip_address       , event_count
+59.63.188.30     , 43150
+183.63.110.206   , 34680
+183.238.178.195  , 29038
+139.219.191.138  , 21704
+183.62.140.253   , 21704
+```
 
 `SQL:`
 ```sql
-SELECT ip_address, COUNT(*) AS event_count
-FROM ssh
-GROUP BY ip_address
-ORDER BY event_count DESC
+SELECT ip_address, COUNT(*) AS event_count 
+FROM ssh 
+GROUP BY ip_address 
+ORDER BY event_count DESC 
 LIMIT 5;
 ```"
-2,2025-09-05T08:16:20Z,Show me all failed login attempts from yesterday,"Assumption: Yesterday is defined as the day before today's date in UTC.
+2,2025-09-10T17:09:25Z,Show me all failed login attempts from yesterday,"Assumption: Yesterday is defined as the day before today's date in UTC.
 
 `SQL:`
 ```sql
 SELECT *
 FROM ssh
-WHERE event_type IN ('FAILED_LOGIN', 'FAILED_LOGIN_INVALID_USER')
-  AND timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-  AND timestamp < CURDATE()
-LIMIT 50;
+WHERE event_type IN ('FAILED_LOGIN_INVALID_USER', 'PAM_AUTH_FAILURE')
+  AND DATE(timestamp) = CURRENT_DATE - INTERVAL '1' DAY;
 ```"
-3,2025-09-05T08:16:33Z,Are there any signs of brute force attacks?,"Summary: To identify potential brute-force attacks, we will look for repeated failed login attempts from the same IP address.
-
-`SQL:` 
-```sql
-SELECT ip_address, username, COUNT(*) AS failed_attempts
-FROM ssh
-WHERE event_type IN ('FAILED_LOGIN', 'FAILED_LOGIN_INVALID_USER')
-GROUP BY ip_address, username
-HAVING failed_attempts > 10
-ORDER BY failed_attempts DESC;
-```"
-4,2025-09-05T08:17:05Z,Which usernames are being targeted most frequently?,"Summary: The usernames being targeted most frequently are listed below with their occurrence counts.
-
+3,2025-09-10T17:10:28Z,Are there any signs of brute force attacks?,"Summary: There are clear signs of brute force attacks from multiple IP addresses with a high number of failed login attempts.
 Findings:
-- `root`: 316,601 attempts
-- `admin`: 11,114 attempts
-- `test`: 1,086 attempts
-- `oracle`: 978 attempts
-- `support`: 937 attempts
-- `user`: 718 attempts
-- `pi`: 674 attempts
-- `nagios`: 592 attempts
-- `guest`: 518 attempts
-- `postgres`: 432 attempts
+- The top 5 IPs with the highest number of failed login attempts are:
+  - `183.63.110.206` with 17,340 attempts
+  - `183.238.178.195` with 14,519 attempts
+  - `59.63.188.30` with 14,384 attempts
+  - `139.219.191.138` and `183.62.140.253`, both with 10,852 attempts
 
 Preview:
 ```
-username,attempts_count
+ip_address, failed_attempts
+183.63.110.206, 17340
+183.238.178.195, 14519
+59.63.188.30, 14384
+139.219.191.138, 10852
+183.62.140.253, 10852
+```
+
+SQL:
+```sql
+SELECT ip_address, COUNT(event_type) AS failed_attempts 
+FROM ssh 
+WHERE event_type IN ('FAILED_LOGIN_INVALID_USER', 'PAM_AUTH_FAILURE') 
+GROUP BY ip_address 
+ORDER BY failed_attempts DESC 
+LIMIT 5;
+```"
+4,2025-09-10T17:10:57Z,Which usernames are being targeted most frequently?,"Summary: The usernames being targeted most frequently are identified by aggregating the `username` field in the SSH dataset and counting occurrences.
+Findings:
+- Top targeted username: `root`, with 316,601 occurrences.
+- Second most targeted: `admin`, with 11,114 occurrences.
+- Third most targeted: `test`, with 1,086 occurrences.
+- Fourth most targeted: `oracle`, with 978 occurrences.
+- Fifth most targeted: `support`, with 937 occurrences.
+
+Preview:
+```
+username,occurrence_count
 root,316601
 admin,11114
 test,1086
 oracle,978
 support,937
-user,718
-pi,674
-nagios,592
-guest,518
-postgres,432
 ```
 
 SQL:
 ```sql
-SELECT username, COUNT(*) AS attempts_count
+SELECT username, COUNT(*) AS occurrence_count
 FROM ssh
 GROUP BY username
-ORDER BY attempts_count DESC
-LIMIT 10;
+ORDER BY occurrence_count DESC
+LIMIT 5;
 ```"
-5,2025-09-05T08:17:09Z,How many total login attempts were recorded?,"Summary: The total number of login attempts is the count of all rows in the `ssh` table.
+5,2025-09-10T17:11:07Z,How many total login attempts were recorded?,"Summary: There were a total of 352,550 login attempts recorded in the SSH dataset.
 
-```sql
-SELECT COUNT(*) AS total_attempts FROM ssh;
-```
-
-`SQL:` ```sql
-SELECT COUNT(*) AS total_attempts FROM ssh;
-```"
+`Findings:`
+- Total login attempts: 352,550"
